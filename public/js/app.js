@@ -1036,6 +1036,9 @@ function loadGames() {
 
   // Request online players list
   socket.emit('get_online');
+
+  // Load roulette
+  loadRoulette();
 }
 
 function initWarListeners() {
@@ -1252,6 +1255,273 @@ function renderWarCards(containerId, cards) {
 
 function closeWarResult() {
   document.getElementById('war-result').style.display = 'none';
+}
+
+// ===== BANANA ROULETTE =====
+let rouletteSlots = [];
+let rouletteCardValues = {};
+let rouletteSpinning = false;
+let rouletteWagerType = 'bananas';
+
+async function loadRoulette() {
+  // Fetch slot config
+  try {
+    const res = await fetch('/api/roulette/slots');
+    if (!res.ok) return;
+    const data = await res.json();
+    rouletteSlots = data.slots;
+    rouletteCardValues = data.cardValues;
+    renderRouletteWheel();
+  } catch (e) {}
+
+  // Load history
+  loadRouletteHistory();
+
+  // Load wagerable cards
+  loadRouletteCards();
+
+  // Clamp slider to current balance
+  const slider = document.getElementById('roulette-slider');
+  const maxWager = Math.min(2000, currentBananas);
+  slider.max = Math.max(100, maxWager);
+  if (parseInt(slider.value) > maxWager) {
+    slider.value = Math.max(100, maxWager);
+    updateRouletteSlider();
+  }
+}
+
+function renderRouletteWheel() {
+  const wheel = document.getElementById('roulette-wheel');
+  if (!wheel || rouletteSlots.length === 0) return;
+
+  // Build the wheel with repeated slots for visual spin
+  // 7 unique slots, repeat enough times for a good spin animation
+  const repeats = 8;
+  let html = '';
+  for (let r = 0; r < repeats; r++) {
+    for (let i = 0; i < rouletteSlots.length; i++) {
+      const s = rouletteSlots[i];
+      const mult = s.multiplier === 0 ? 'BUST' : s.multiplier + '×';
+      html += `<div class="roulette-slot roulette-slot-${i}" data-index="${i}">
+        <div class="roulette-slot-emoji">${s.emoji}</div>
+        <div class="roulette-slot-mult">${mult}</div>
+      </div>`;
+    }
+  }
+  wheel.innerHTML = html;
+
+  // Reset position
+  wheel.style.transition = 'none';
+  wheel.style.transform = 'translateX(0)';
+}
+
+function setRouletteWagerType(type) {
+  rouletteWagerType = type;
+  document.querySelectorAll('.roulette-wager-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.roulette-wager-tab[onclick="setRouletteWagerType('${type}')"]`).classList.add('active');
+
+  document.getElementById('roulette-banana-wager').style.display = type === 'bananas' ? 'block' : 'none';
+  document.getElementById('roulette-card-wager').style.display = type === 'card' ? 'block' : 'none';
+}
+
+function updateRouletteSlider() {
+  const val = document.getElementById('roulette-slider').value;
+  document.getElementById('roulette-amount-display').textContent = '🍌 ' + parseInt(val).toLocaleString();
+  document.getElementById('roulette-amount-input').value = val;
+}
+
+function syncRouletteInput() {
+  let val = parseInt(document.getElementById('roulette-amount-input').value);
+  if (isNaN(val)) val = 100;
+  val = Math.max(100, Math.min(2000, val));
+  val = Math.round(val / 100) * 100;
+  document.getElementById('roulette-amount-input').value = val;
+  document.getElementById('roulette-slider').value = val;
+  document.getElementById('roulette-amount-display').textContent = '🍌 ' + val.toLocaleString();
+}
+
+async function loadRouletteCards() {
+  try {
+    const res = await fetch('/api/roulette/cards');
+    if (!res.ok) return;
+    const cards = await res.json();
+    const select = document.getElementById('roulette-card-select');
+    select.innerHTML = '<option value="">Pick a card to wager...</option>';
+    cards.forEach(c => {
+      const val = rouletteCardValues[c.rarity] || 0;
+      select.innerHTML += `<option value="${c.inventoryId}" data-rarity="${c.rarity}" data-value="${val}">
+        ${RARITY_EMOJIS[c.rarity] || ''} ${c.name} (×${c.count}) — worth 🍌${val.toLocaleString()}
+      </option>`;
+    });
+
+    select.onchange = () => {
+      const opt = select.selectedOptions[0];
+      const valueDiv = document.getElementById('roulette-card-value');
+      if (opt && opt.value) {
+        valueDiv.textContent = `Card value: 🍌 ${parseInt(opt.dataset.value).toLocaleString()}`;
+      } else {
+        valueDiv.textContent = '';
+      }
+    };
+  } catch (e) {}
+}
+
+async function spinRoulette() {
+  if (rouletteSpinning) return;
+  rouletteSpinning = true;
+
+  const btn = document.getElementById('roulette-spin-btn');
+  btn.disabled = true;
+  btn.textContent = 'Spinning...';
+  document.getElementById('roulette-result').style.display = 'none';
+
+  // Build request body
+  const body = { wagerType: rouletteWagerType };
+  if (rouletteWagerType === 'bananas') {
+    body.bananaAmount = parseInt(document.getElementById('roulette-amount-input').value);
+  } else {
+    body.inventoryId = parseInt(document.getElementById('roulette-card-select').value);
+  }
+
+  try {
+    const res = await fetch('/api/roulette/spin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Spin failed.');
+      btn.disabled = false;
+      btn.textContent = 'SPIN!';
+      rouletteSpinning = false;
+      return;
+    }
+
+    // Animate the wheel
+    animateRouletteWheel(data.slotIndex, () => {
+      // Show result
+      showRouletteResult(data);
+
+      // Update banana display
+      currentBananas = data.bananas;
+      document.getElementById('display-bananas').textContent = '🍌 ' + currentBananas.toLocaleString();
+
+      // Update mascot
+      const mascot = document.getElementById('roulette-mascot');
+      if (data.net > 0) {
+        mascot.src = '/img/mascot/banana-excited.svg';
+      } else if (data.net < 0) {
+        mascot.src = '/img/mascot/banana-sad.svg';
+      } else {
+        mascot.src = '/img/mascot/banana-happy.svg';
+      }
+
+      // Refresh history and cards
+      loadRouletteHistory();
+      loadRouletteCards();
+
+      // Update slider max
+      const slider = document.getElementById('roulette-slider');
+      const maxWager = Math.min(2000, currentBananas);
+      slider.max = Math.max(100, maxWager);
+      if (parseInt(slider.value) > maxWager) {
+        slider.value = Math.max(100, maxWager);
+        updateRouletteSlider();
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'SPIN!';
+      rouletteSpinning = false;
+    });
+  } catch (e) {
+    alert('Spin failed. Try again.');
+    btn.disabled = false;
+    btn.textContent = 'SPIN!';
+    rouletteSpinning = false;
+  }
+}
+
+function animateRouletteWheel(targetIndex, callback) {
+  const wheel = document.getElementById('roulette-wheel');
+  const slotWidth = 90; // matches CSS
+  const numSlots = rouletteSlots.length; // 7
+
+  // We want to spin through several full rotations then land on target
+  const fullRotations = 5;
+  const totalSlots = fullRotations * numSlots + targetIndex;
+
+  // Center the winning slot under the pointer
+  const offset = totalSlots * slotWidth + slotWidth / 2;
+  const containerCenter = wheel.parentElement.offsetWidth / 2;
+  const finalPos = offset - containerCenter;
+
+  // Reset position first
+  wheel.style.transition = 'none';
+  wheel.style.transform = 'translateX(0)';
+
+  // Force reflow
+  wheel.offsetHeight;
+
+  // Animate
+  wheel.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1)';
+  wheel.style.transform = `translateX(-${finalPos}px)`;
+
+  setTimeout(callback, 4200);
+}
+
+function showRouletteResult(data) {
+  const resultDiv = document.getElementById('roulette-result');
+  document.getElementById('roulette-result-emoji').textContent = data.slot.emoji;
+  document.getElementById('roulette-result-name').textContent = data.slot.name;
+
+  const payoutEl = document.getElementById('roulette-result-payout');
+  if (data.net > 0) {
+    payoutEl.textContent = `+${data.payout.toLocaleString()} Bananas! (${data.slot.multiplier}× your wager)`;
+    payoutEl.className = 'roulette-result-payout win';
+  } else if (data.net === 0) {
+    payoutEl.textContent = `Push — you get your ${data.wagerValue.toLocaleString()} back`;
+    payoutEl.className = 'roulette-result-payout push';
+  } else {
+    const lost = data.wagerValue - data.payout;
+    if (data.payout === 0) {
+      payoutEl.textContent = `Bust! Lost ${data.wagerValue.toLocaleString()} Bananas`;
+    } else {
+      payoutEl.textContent = `Got back ${data.payout.toLocaleString()} — lost ${lost.toLocaleString()} net`;
+    }
+    payoutEl.className = 'roulette-result-payout loss';
+  }
+
+  resultDiv.style.display = 'block';
+}
+
+async function loadRouletteHistory() {
+  try {
+    const res = await fetch('/api/roulette/history');
+    if (!res.ok) return;
+    const rows = await res.json();
+    const list = document.getElementById('roulette-history-list');
+
+    if (rows.length === 0) {
+      list.innerHTML = '<p style="color:#484f58;font-style:italic;">No spins yet.</p>';
+      return;
+    }
+
+    list.innerHTML = rows.map(r => {
+      const net = r.payout - r.wager_value;
+      const netClass = net > 0 ? 'win' : net < 0 ? 'loss' : 'push';
+      const netText = net > 0 ? `+${net.toLocaleString()}` : net === 0 ? '±0' : net.toLocaleString();
+      const wagerText = r.wager_type === 'card'
+        ? `${RARITY_EMOJIS[r.card_rarity] || ''} ${r.card_name}`
+        : `🍌 ${r.wager_value.toLocaleString()}`;
+      return `<div class="roulette-history-row">
+        <span class="roulette-history-slot">${r.slot_name} (${r.multiplier}×)</span>
+        <span class="roulette-history-wager">${wagerText}</span>
+        <span class="roulette-history-net ${netClass}">${netText}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {}
 }
 
 // Check if already logged in on page load

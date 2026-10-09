@@ -1467,3 +1467,299 @@ main {
   margin-bottom: 0.75rem;
   font-weight: 600;
 }
+
+/* ===== BANANA ROULETTE ===== */
+
+.roulette-section {
+  border-top: 1px solid #30363d;
+  padding-top: 1.5rem;
+}
+
+/* Wager Controls */
+.roulette-wager {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.roulette-wager-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.roulette-wager-tab {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+  color: #8b949e;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.roulette-wager-tab.active {
+  background: #1f6feb;
+  border-color: #1f6feb;
+  color: #fff;
+}
+
+.roulette-wager-tab:hover:not(.active) {
+  border-color: #484f58;
+  color: #c9d1d9;
+}
+
+.roulette-banana-wager input[type="range"] {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  accent-color: #f5c542;
+}
+
+.roulette-amount-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.roulette-amount-row span {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f5c542;
+}
+
+.roulette-amount-row input[type="number"] {
+  width: 100px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.roulette-card-wager select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 0.9rem;
+}
+
+.roulette-card-value {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #f5c542;
+  font-weight: 600;
+}
+
+/* Wheel Container */
+.roulette-wheel-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 1rem;
+  overflow: hidden;
+  border: 2px solid #30363d;
+  border-radius: 12px;
+  background: #0d1117;
+  height: 100px;
+}
+
+.roulette-pointer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  color: #f5c542;
+  z-index: 10;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  filter: drop-shadow(0 0 6px rgba(245, 197, 66, 0.6));
+}
+
+.roulette-wheel {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+}
+
+.roulette-slot {
+  width: 90px;
+  min-width: 90px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #21262d;
+  gap: 4px;
+}
+
+.roulette-slot-emoji {
+  font-size: 1.8rem;
+}
+
+.roulette-slot-mult {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8b949e;
+}
+
+/* Slot colors */
+.roulette-slot-0 { background: #2d1515; } /* Rotten - dark red */
+.roulette-slot-1 { background: #2d2415; } /* Half Peel - dark orange */
+.roulette-slot-2 { background: #1e2228; } /* Push - neutral dark */
+.roulette-slot-3 { background: #152d1a; } /* Double - dark green */
+.roulette-slot-4 { background: #15202d; } /* Triple - dark blue */
+.roulette-slot-5 { background: #251530; } /* Bunch - dark purple */
+.roulette-slot-6 { background: #2d2a15; } /* Golden - dark gold */
+
+.roulette-slot-0 .roulette-slot-mult { color: #f87171; }
+.roulette-slot-1 .roulette-slot-mult { color: #fb923c; }
+.roulette-slot-2 .roulette-slot-mult { color: #7d8590; }
+.roulette-slot-3 .roulette-slot-mult { color: #4ade80; }
+.roulette-slot-4 .roulette-slot-mult { color: #60a5fa; }
+.roulette-slot-5 .roulette-slot-mult { color: #c084fc; }
+.roulette-slot-6 .roulette-slot-mult { color: #fbbf24; }
+
+/* Spin Button */
+.roulette-spin-btn {
+  display: block;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 1.5rem;
+  padding: 0.8rem 2rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: 'Fredoka', sans-serif;
+  background: linear-gradient(135deg, #f5c542, #e6a817);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.roulette-spin-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffd666, #f5c542);
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(245, 197, 66, 0.3);
+}
+
+.roulette-spin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Result Display */
+.roulette-result {
+  text-align: center;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  animation: roulette-result-pop 0.3s ease;
+}
+
+@keyframes roulette-result-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.roulette-result-emoji {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.roulette-result-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #c9d1d9;
+  margin-bottom: 0.5rem;
+}
+
+.roulette-result-payout {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.roulette-result-payout.win {
+  color: #4ade80;
+}
+
+.roulette-result-payout.loss {
+  color: #f87171;
+}
+
+.roulette-result-payout.push {
+  color: #7d8590;
+}
+
+/* History */
+.roulette-history {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.roulette-history h3 {
+  color: #c9d1d9;
+  margin-bottom: 0.5rem;
+}
+
+.roulette-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.roulette-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.roulette-history-slot {
+  color: #8b949e;
+  flex: 1;
+}
+
+.roulette-history-wager {
+  color: #c9d1d9;
+  flex: 1;
+  text-align: center;
+}
+
+.roulette-history-net {
+  font-weight: 700;
+  min-width: 70px;
+  text-align: right;
+}
+
+.roulette-history-net.win { color: #4ade80; }
+.roulette-history-net.loss { color: #f87171; }
+.roulette-history-net.push { color: #7d8590; }

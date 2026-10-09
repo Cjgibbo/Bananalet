@@ -157,6 +157,68 @@
               <button onclick="closeWarResult()">Continue</button>
             </div>
           </div>
+
+
+          <!-- Roulette Section -->
+          <div id="roulette-section" class="roulette-section" style="margin-top:2rem;">
+            <div class="section-header-with-mascot">
+              <div>
+                <h2>Banana Roulette</h2>
+                <p style="color:#7d8590;margin-bottom:0;">Wager Bananas or a card — spin the wheel and test your luck 🎰</p>
+              </div>
+              <img id="roulette-mascot" src="/img/mascot/banana-excited.svg" alt="" class="section-mascot" draggable="false">
+            </div>
+
+            <!-- Wager Controls -->
+            <div class="roulette-wager">
+              <div class="roulette-wager-tabs">
+                <button class="roulette-wager-tab active" onclick="setRouletteWagerType('bananas')">🍌 Bananas</button>
+                <button class="roulette-wager-tab" onclick="setRouletteWagerType('card')">🃏 Card</button>
+              </div>
+
+              <div id="roulette-banana-wager" class="roulette-banana-wager">
+                <input type="range" id="roulette-slider" min="100" max="2000" step="100" value="500"
+                       oninput="updateRouletteSlider()">
+                <div class="roulette-amount-row">
+                  <span id="roulette-amount-display">🍌 500</span>
+                  <input type="number" id="roulette-amount-input" min="100" max="2000" step="100" value="500"
+                         onchange="syncRouletteInput()">
+                </div>
+              </div>
+
+              <div id="roulette-card-wager" class="roulette-card-wager" style="display:none;">
+                <select id="roulette-card-select">
+                  <option value="">Pick a card to wager...</option>
+                </select>
+                <div id="roulette-card-value" class="roulette-card-value"></div>
+              </div>
+            </div>
+
+            <!-- The Wheel -->
+            <div class="roulette-wheel-container">
+              <div class="roulette-pointer">▼</div>
+              <div class="roulette-wheel" id="roulette-wheel">
+                <!-- Slots rendered by JS -->
+              </div>
+            </div>
+
+            <button id="roulette-spin-btn" class="roulette-spin-btn" onclick="spinRoulette()">SPIN!</button>
+
+            <!-- Result Display -->
+            <div id="roulette-result" class="roulette-result" style="display:none;">
+              <div id="roulette-result-emoji" class="roulette-result-emoji"></div>
+              <div id="roulette-result-name" class="roulette-result-name"></div>
+              <div id="roulette-result-payout" class="roulette-result-payout"></div>
+            </div>
+
+            <!-- Recent Spins -->
+            <div class="roulette-history">
+              <h3>Recent Spins</h3>
+              <div id="roulette-history-list" class="roulette-history-list">
+                <p style="color:#484f58;font-style:italic;">No spins yet.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Leaderboard Tab -->

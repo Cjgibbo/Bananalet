@@ -53,7 +53,9 @@ app.get('*', (req, res) => {
 initialize().then(() => {
   const { setupChat } = require('./server/routes/chat');
   const { setupWar, warRouter } = require('./server/routes/war');
+  const rouletteRouter = require('./server/routes/roulette');
   app.use('/api/war', warRouter);
+  app.use('/api/roulette', rouletteRouter);
   setupChat(io);
   setupWar(io);
 

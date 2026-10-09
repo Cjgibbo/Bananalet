@@ -128,6 +128,22 @@ async function initialize() {
   )`);
   console.log('Migration: ensured war_results table exists.');
 
+  // Migration: create roulette_results table if it doesn't exist
+  db.exec(`CREATE TABLE IF NOT EXISTS roulette_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    wager_type TEXT NOT NULL,
+    wager_value INTEGER NOT NULL,
+    card_name TEXT,
+    card_rarity TEXT,
+    slot_index INTEGER NOT NULL,
+    slot_name TEXT NOT NULL,
+    multiplier REAL NOT NULL,
+    payout INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+  console.log('Migration: ensured roulette_results table exists.');
+
   // Seed only if empty
   const seasonCount = db.prepare('SELECT COUNT(*) as c FROM seasons').get().c;
   if (seasonCount === 0) {
