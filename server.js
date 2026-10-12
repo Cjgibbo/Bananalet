@@ -38,6 +38,8 @@ app.use('/api/crafting', require('./server/routes/crafting'));
 app.use('/api/admin', require('./server/routes/admin'));
 app.use('/api/leaderboard', require('./server/routes/leaderboard'));
 app.use('/api/superadmin', require('./server/routes/superadmin'));
+app.use('/api/roulette', require('./server/routes/roulette'));
+app.use('/api/war', require('./server/routes/war').warRouter);
 
 // Make io available to admin routes for boost broadcasts
 app.set('io', io);
@@ -55,10 +57,7 @@ app.get('*', (req, res) => {
 // Initialize database, setup chat, start server
 initialize().then(() => {
   const { setupChat } = require('./server/routes/chat');
-  const { setupWar, warRouter } = require('./server/routes/war');
-  const rouletteRouter = require('./server/routes/roulette');
-  app.use('/api/war', warRouter);
-  app.use('/api/roulette', rouletteRouter);
+  const { setupWar } = require('./server/routes/war');
   setupChat(io);
   setupWar(io);
 
