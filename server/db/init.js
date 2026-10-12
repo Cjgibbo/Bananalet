@@ -128,6 +128,17 @@ async function initialize() {
   )`);
   console.log('Migration: ensured war_results table exists.');
 
+  // Migration: create luck_boosts table if it doesn't exist
+  db.exec(`CREATE TABLE IF NOT EXISTS luck_boosts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    multiplier INTEGER NOT NULL,
+    duration_minutes INTEGER NOT NULL,
+    activated_by INTEGER REFERENCES users(id),
+    active INTEGER DEFAULT 1,
+    started_at TEXT DEFAULT (datetime('now'))
+  )`);
+  console.log('Migration: ensured luck_boosts table exists.');
+
   // Migration: create roulette_results table if it doesn't exist
   db.exec(`CREATE TABLE IF NOT EXISTS roulette_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

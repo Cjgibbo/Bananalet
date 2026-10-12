@@ -30,6 +30,24 @@ function openPack(userId, packId) {
       throw new Error('Pack has no configured odds');
     }
 
+    // Check for active luck boost
+    const activeBoost = db.prepare(`
+      SELECT multiplier FROM luck_boosts
+      WHERE active = 1
+      AND datetime(started_at, '+' || duration_minutes || ' minutes') > datetime('now')
+      ORDER BY started_at DESC LIMIT 1
+    `).get();
+
+    if (activeBoost) {
+      // Boost: multiply all weights by the multiplier, which compresses
+      // the distribution toward higher tiers proportionally
+      for (const odd of odds) {
+        if (odd.rarity !== 'common') {
+          odd.weight = odd.weight * activeBoost.multiplier;
+        }
+      }
+    }
+
     // Roll for rarity
     const rarity = rollRarity(odds);
 

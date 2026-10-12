@@ -103,6 +103,9 @@ function enterDashboard(user, dailyBonus) {
 
   showScreen('dashboard-screen');
   loadPacks();
+
+  // Check for active luck boost
+  checkBoostOnLogin();
 }
 
 // Tabs
@@ -490,6 +493,15 @@ function initChat() {
     }
   });
 
+  // Luck boost events
+  socket.on('boost:activated', (data) => {
+    showBoostBanner(data.multiplier, data.endsAt);
+  });
+
+  socket.on('boost:ended', () => {
+    hideBoostBanner();
+  });
+
   // Global challenge notification (works on any tab)
   socket.on('war:incoming', (data) => {
     warChallengerId = data.challengerId;
@@ -623,6 +635,8 @@ function loadChat() {
 async function loadAdmin() {
   loadAdminUsers();
   loadAdminBadges();
+  loadAstronomical();
+  loadBoostStatus();
 }
 
 async function loadAdminUsers() {
@@ -1522,6 +1536,210 @@ async function loadRouletteHistory() {
       </div>`;
     }).join('');
   } catch (e) {}
+}
+
+// ===== ASTRONOMICAL MANAGEMENT =====
+async function loadAstronomical() {
+  try {
+    // Load all astronomical characters for minting
+    const charsRes = await fetch('/api/admin/astronomical/characters');
+    if (charsRes.ok) {
+      const chars = await charsRes.json();
+      const mintSelect = document.getElementById('admin-astro-mint-select');
+      mintSelect.innerHTML = '<option value="">Select astronomical...</option>' +
+        chars.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    // Load owner's astronomical inventory for gifting
+    const invRes = await fetch('/api/admin/astronomical/inventory');
+    if (invRes.ok) {
+      const items = await invRes.json();
+      const giftCharSelect = document.getElementById('admin-astro-gift-char');
+      giftCharSelect.innerHTML = '<option value="">Your astronomicals...</option>' +
+        items.map(i => `<option value="${i.character_id}">${i.name} (x${i.count})</option>`).join('');
+    }
+
+    // Populate the gift user dropdown from the admin users list
+    const usersRes = await fetch('/api/admin/users');
+    if (usersRes.ok) {
+      const users = await usersRes.json();
+      const giftUserSelect = document.getElementById('admin-astro-gift-user');
+      giftUserSelect.innerHTML = '<option value="">Select player...</option>' +
+        users.map(u => `<option value="${u.id}">${u.username}</option>`).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load astronomical admin', err);
+  }
+}
+
+async function adminMintAstronomical() {
+  const characterId = document.getElementById('admin-astro-mint-select').value;
+  if (!characterId) return alert('Select an astronomical character');
+
+  const res = await fetch('/api/admin/astronomical/mint', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ characterId: parseInt(characterId) })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`Minted ${data.character.name} to your inventory!`);
+    loadAstronomical();
+  } else {
+    alert(data.error);
+  }
+}
+
+async function adminCreateAstronomical() {
+  const name = document.getElementById('admin-astro-create-name').value.trim();
+  const imagePath = document.getElementById('admin-astro-create-image').value.trim();
+  if (!name) return alert('Enter a character name');
+
+  const res = await fetch('/api/admin/astronomical/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, imagePath: imagePath || null })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`Created ${data.character.name}!`);
+    document.getElementById('admin-astro-create-name').value = '';
+    document.getElementById('admin-astro-create-image').value = '';
+    loadAstronomical();
+  } else {
+    alert(data.error);
+  }
+}
+
+async function adminGiftAstronomical() {
+  const characterId = document.getElementById('admin-astro-gift-char').value;
+  const targetUserId = document.getElementById('admin-astro-gift-user').value;
+  if (!characterId || !targetUserId) return alert('Select a character and a player');
+
+  const res = await fetch('/api/admin/astronomical/gift', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ characterId: parseInt(characterId), targetUserId: parseInt(targetUserId) })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    alert(`Gifted ${data.character.name} to ${data.recipient}!`);
+    loadAstronomical();
+  } else {
+    alert(data.error);
+  }
+}
+
+// ===== LUCK BOOST =====
+let boostTimer = null;
+let boostEndTime = null;
+
+async function checkBoostOnLogin() {
+  try {
+    const res = await fetch('/api/admin/boost/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.active) {
+      showBoostBanner(data.multiplier, data.endsAt);
+    }
+  } catch (e) {}
+}
+
+async function loadBoostStatus() {
+  try {
+    const res = await fetch('/api/admin/boost/status');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data.active) {
+      showBoostBanner(data.multiplier, data.endsAt);
+      updateBoostAdminStatus(data.multiplier, data.endsAt);
+    } else {
+      hideBoostBanner();
+      const statusEl = document.getElementById('boost-status');
+      if (statusEl) statusEl.innerHTML = '<p style="color:#7d8590;">No active boost.</p>';
+    }
+  } catch (e) {}
+}
+
+function showBoostBanner(multiplier, endsAtISO) {
+  boostEndTime = new Date(endsAtISO);
+  const banner = document.getElementById('boost-banner');
+  document.getElementById('boost-multiplier-display').textContent = multiplier;
+  banner.style.display = 'block';
+
+  // Clear any existing timer
+  if (boostTimer) clearInterval(boostTimer);
+
+  // Start countdown
+  boostTimer = setInterval(() => {
+    const now = new Date();
+    const diff = boostEndTime - now;
+    if (diff <= 0) {
+      hideBoostBanner();
+      return;
+    }
+    const mins = Math.floor(diff / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('boost-timer').textContent =
+      `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, 1000);
+
+  // Trigger initial display
+  const now = new Date();
+  const diff = boostEndTime - now;
+  if (diff > 0) {
+    const mins = Math.floor(diff / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    document.getElementById('boost-timer').textContent =
+      `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+}
+
+function hideBoostBanner() {
+  document.getElementById('boost-banner').style.display = 'none';
+  if (boostTimer) {
+    clearInterval(boostTimer);
+    boostTimer = null;
+  }
+  boostEndTime = null;
+}
+
+function updateBoostAdminStatus(multiplier, endsAtISO) {
+  const statusEl = document.getElementById('boost-status');
+  if (!statusEl) return;
+  statusEl.innerHTML = `<p style="color:#10b981;font-weight:600;">🍀 ${multiplier}× boost active!</p>`;
+}
+
+async function adminActivateBoost() {
+  const multiplier = parseInt(document.getElementById('admin-boost-multiplier').value);
+  const durationMinutes = parseInt(document.getElementById('admin-boost-duration').value);
+  if (!durationMinutes || durationMinutes < 1) return alert('Enter a valid duration');
+
+  const res = await fetch('/api/admin/boost/activate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ multiplier, durationMinutes })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    showBoostBanner(multiplier, data.boost.endsAt);
+    updateBoostAdminStatus(multiplier, data.boost.endsAt);
+  } else {
+    alert(data.error);
+  }
+}
+
+async function adminDeactivateBoost() {
+  const res = await fetch('/api/admin/boost/deactivate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (res.ok) {
+    hideBoostBanner();
+    const statusEl = document.getElementById('boost-status');
+    if (statusEl) statusEl.innerHTML = '<p style="color:#7d8590;">No active boost.</p>';
+  }
 }
 
 // Check if already logged in on page load

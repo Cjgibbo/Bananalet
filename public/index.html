@@ -59,6 +59,10 @@
           <p>🍌 Daily bonus: +<span id="bonus-amount"></span> Bananas!</p>
         </div>
 
+        <div id="boost-banner" class="boost-banner" style="display:none;">
+          <p>🍀 <strong><span id="boost-multiplier-display"></span>× LUCK BOOST ACTIVE!</strong> — <span id="boost-timer"></span> remaining</p>
+        </div>
+
         <!-- Shop Tab -->
         <div id="tab-shop" class="tab-content active">
           <div id="packs-grid" class="packs-grid"></div>
@@ -274,6 +278,48 @@
           <div class="admin-section">
             <h3>Players</h3>
             <div id="admin-users-list" class="admin-users-list"></div>
+          </div>
+
+          <div class="admin-section">
+            <h3>⭐ Astronomical Management</h3>
+            <div class="admin-subsection">
+              <h4>Mint Astronomical to Your Inventory</h4>
+              <div class="admin-form">
+                <select id="admin-astro-mint-select"><option value="">Select astronomical...</option></select>
+                <button onclick="adminMintAstronomical()">Mint to Me</button>
+              </div>
+            </div>
+            <div class="admin-subsection">
+              <h4>Create New Astronomical</h4>
+              <div class="admin-form">
+                <input type="text" id="admin-astro-create-name" placeholder="Character name">
+                <input type="text" id="admin-astro-create-image" placeholder="Image path (e.g. /img/characters/name.png)">
+                <button onclick="adminCreateAstronomical()">Create</button>
+              </div>
+            </div>
+            <div class="admin-subsection">
+              <h4>Gift Astronomical to Player</h4>
+              <div class="admin-form">
+                <select id="admin-astro-gift-char"><option value="">Your astronomicals...</option></select>
+                <select id="admin-astro-gift-user"><option value="">Select player...</option></select>
+                <button onclick="adminGiftAstronomical()">Gift</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <h3>🍀 Luck Boost</h3>
+            <div id="boost-status" class="boost-admin-status"></div>
+            <div class="admin-form">
+              <select id="admin-boost-multiplier">
+                <option value="5">5× Boost</option>
+                <option value="10">10× Boost</option>
+                <option value="25">25× Boost</option>
+              </select>
+              <input type="number" id="admin-boost-duration" placeholder="Minutes" value="10" min="1" max="120">
+              <button onclick="adminActivateBoost()">Activate</button>
+              <button onclick="adminDeactivateBoost()" style="background:#ef4444;">Stop</button>
+            </div>
           </div>
         </div>
 

@@ -39,6 +39,9 @@ app.use('/api/admin', require('./server/routes/admin'));
 app.use('/api/leaderboard', require('./server/routes/leaderboard'));
 app.use('/api/superadmin', require('./server/routes/superadmin'));
 
+// Make io available to admin routes for boost broadcasts
+app.set('io', io);
+
 // Serve bananaboss page at secret URL
 app.get('/bananaboss', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'bananaboss.html'));
